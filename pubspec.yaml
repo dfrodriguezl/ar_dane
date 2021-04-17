@@ -31,9 +31,11 @@ dependencies:
   cupertino_icons: ^1.0.2
 #  english_words: ^3.1.5
   arcore_flutter_plugin: ^0.0.10
-  splashscreen:
+#  splashscreen:
   flutter_map: any
   flutter_map_location: any
+#  flutter_native_splash: ^1.1.7+1
+  path_provider: ^2.0.1
 
 #  camera:
 #  path_provider:
@@ -85,3 +87,7 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
+
+flutter_native_splash:
+  background_image: "assets/Splash.png"
+  android: true

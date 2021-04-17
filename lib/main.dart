@@ -2,8 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_app/src/views/splash/TimeBasedSplash.dart';
+import 'package:flutter_app/src/views/ui/InitialMap.dart';
+
 
 const MaterialColor white = const MaterialColor(
   0xFFFFFFFF,
@@ -41,16 +44,43 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
-    // return Scaffold(
-    //   appBar: AppBar(
-    //     title: Text('Startup Name Generator'),
-    //   ),
-    //   body: Text('Done!!'),
-    // );
-    return new TimeBasedSplash().build(context);
+    return FutureBuilder(
+      // Replace the 3 second delay with your initialization code:
+      future: Future.delayed(Duration(seconds: 3)),
+      builder: (context, AsyncSnapshot snapshot) {
+        // Show splash screen while waiting for app resources to load:
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return MaterialApp(home: Splash());
+        } else {
+          // Loading is done, return the app:
+          return MaterialApp(
+            home: new InitialMap()
+          );
+        }
+      },
+    );
 
   }
 }
+
+class Splash extends StatelessWidget {
+  // File f = await getImageFileFromAssets("Splash.png");
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: new AssetImage("assets/Splash.png"),
+            fit: BoxFit.cover
+          ),
+        ),
+      )
+    );
+  }
+}
+
+
 
 // class MyApp extends StatefulWidget {
 //   @override
