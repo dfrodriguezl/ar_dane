@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_app/models/DbHelper.dart';
+import 'package:flutter_app/models/Manzana.dart';
 import 'package:flutter_app/src/views/ui/ARCoreScreen.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong/latlong.dart';
@@ -6,6 +8,9 @@ import 'package:flutter_map_location/flutter_map_location.dart';
 import 'package:arcore_flutter_plugin/arcore_flutter_plugin.dart';
 import 'package:vector_math/vector_math_64.dart' as vector;
 import 'package:flutter/services.dart';
+
+
+List<Marker> centroidsManzanas = [];
 
 final MaterialColor kPrimaryColor = const MaterialColor(
   0xffbe0c4d,
@@ -27,24 +32,86 @@ class InitialMap extends StatelessWidget {
   final textLocation = 'This is a map that is showing (-74, 4)';
   // ArCoreController arCoreController;
 
+  DbHelper dbHelper = new DbHelper();
+
+  void main() async {
+    await getMarkersCentroids();
+  }
+
+
   @override
   Widget build(BuildContext context) {
     final MapController mapController = MapController();
     final List<Marker> userLocationMarkers = <Marker>[];
+    // List<Marker> centroidsManzanas
 
+    // dbHelper.initDb();
+    // List<Marker> centroidsManzanas;
+
+    main();
 
     return Scaffold(
-      appBar: AppBar(title: Text("AR CNPV 2018",
+      appBar: AppBar(
+        title: Text("Buscar ubicación...",
         style: TextStyle(
-        color: hexToColor("#be0c4d"),
+        color: Color(0xffffffff),
       ),),
-      backgroundColor: hexToColor("#FFFFFF"),),
+      backgroundColor: hexToColor("#B91450"),
+      actions: [
+        IconButton(
+            icon: Icon(Icons.search),
+            onPressed: (){
+              final snackBar = SnackBar(
+                content: Text('Buscar!!!'),
+                action: SnackBarAction(
+                  label: 'Atrás',
+                  onPressed: () {
+                    // Some code to undo the change.
+                  },
+                ),
+              );
+
+              // Find the ScaffoldMessenger in the widget tree
+              // and use it to show a SnackBar.
+              ScaffoldMessenger.of(context).showSnackBar(snackBar);
+            })
+      ],),
+      drawer: Drawer(
+        child: ListView(
+          // Important: Remove any padding from the ListView.
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            DrawerHeader(
+              child: Text('AR CNPV 2018',style: TextStyle(
+                color: Color(0xffffffff),
+              ),),
+              decoration: BoxDecoration(
+                color: hexToColor("#B91450"),
+              ),
+            ),
+            ListTile(
+              title: Text('Acerca de'),
+              onTap: () {
+                // Update the state of the app.
+                // ...
+              },
+            ),
+            ListTile(
+              title: Text('¿Como usar?'),
+              onTap: () {
+                // Update the state of the app.
+                // ...
+              },
+            ),
+          ],
+        ),
+      ),
       body: Padding(
-        padding: EdgeInsets.all(8.0),
+        padding: EdgeInsets.all(0),
         child: Column(
           children: [
             Padding(
-              padding: EdgeInsets.only(top: 8.0, bottom: 8.0),
+              padding: EdgeInsets.only(top: 0, bottom: 0),
               // child: locationText()
               // child: Text('This is a map that is showing (-74, 4).'),
             ),
@@ -101,7 +168,7 @@ class InitialMap extends StatelessWidget {
                                 SizedBox(height: 10),
                                 FloatingActionButton(
                                   heroTag: "btn1",
-                                  backgroundColor: hexToColor("#FFFFFF"),
+                                  backgroundColor: hexToColor("#B91450"),
                                   child: ValueListenableBuilder<LocationServiceStatus>(
                                       valueListenable: status,
                                       builder: (BuildContext context,
@@ -112,14 +179,14 @@ class InitialMap extends StatelessWidget {
                                           case LocationServiceStatus.unsubscribed:
                                             return const Icon(
                                               Icons.location_disabled,
-                                              color: Color(0xffbe0c4d),
+                                              color: Color(0xffffffff),
                                               // color: Colors.white,
                                             );
                                             break;
                                           default:
                                             return const Icon(
                                               Icons.gps_fixed,
-                                              color: Color(0xffbe0c4d),
+                                              color: Color(0xffffffff),
                                             );
                                             break;
                                         }
@@ -128,19 +195,22 @@ class InitialMap extends StatelessWidget {
                                 SizedBox(height: 10),
                                 FloatingActionButton(
                                   heroTag: "btn2",
-                                  backgroundColor: hexToColor("#FFFFFF"),
+                                  backgroundColor: hexToColor("#B91450"),
                                   onPressed: () {
                                     Navigator.push(context, 
                                     MaterialPageRoute(
                                         builder: (_) => ARCoreScreen()));
                                   },
                                   child: Icon(Icons.add_location_alt_outlined,
-                                    color: Color(0xffbe0c4d),),
+                                    color: Color(0xffffffff),),
                                   )]),
                         ),
                       );
                     },
                   ),
+                MarkerLayerOptions(
+                  markers: centroidsManzanas,
+                )
                 ],
               )
             )
@@ -153,11 +223,12 @@ class InitialMap extends StatelessWidget {
   }
 
 
+}
 
-
-
-  
-
+getMarkersCentroids() async {
+  centroidsManzanas = await getCentroids();
+  // print(centroidsManzanas);
+  // setState(() {});
 }
 
 
@@ -166,5 +237,35 @@ class InitialMap extends StatelessWidget {
 Color hexToColor(String code) {
   return new Color(int.parse(code.substring(1, 7), radix: 16) + 0xFF000000);
 }
+
+/// Get centroids
+Future<List<Marker>> getCentroids() async {
+  // Future<List<Marker>> markersCnpv = Future;
+  List<Marker> ms = <Marker>[];
+  List<Manzana> manzanas = await Manzana().retrieveManzanas();
+  manzanas.forEach((element) {
+    Marker m = Marker(
+      width: 20.0,
+      height: 20.0,
+      point: LatLng(element.latitud, element.longitud),
+        builder: (ctx) =>
+            Container(
+              child: Icon(Icons.add)
+            )
+      // builder: (ctx) => {}
+    );
+    ms.add(m);
+    print("Elemento manzana: ${element.cod_dane_a}");
+  });
+
+  // markersCnpv = ms as Future<List<Marker>>;
+  return Future((){
+    return ms;
+  });
+
+
+}
+
+
 
 

@@ -36,6 +36,7 @@ dependencies:
   flutter_map_location: any
 #  flutter_native_splash: ^1.1.7+1
   path_provider: ^2.0.1
+  sqflite: ^2.0.0+3
 
 #  camera:
 #  path_provider:

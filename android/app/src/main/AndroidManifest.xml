@@ -44,7 +44,7 @@
 
 
 <!--        <meta-data android:name="com.google.ar.core" android:value="required" />-->
-       <meta-data android:name="com.google.ar.core" android:value="required" tools:replace="android:value" />
+       <meta-data android:name="com.google.ar.core" android:value="optional" tools:replace="android:value" />
 
     </application>
     <uses-permission android:name="android.permission.INTERNET"/>
