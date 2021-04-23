@@ -8,6 +8,8 @@ import 'package:flutter_map_location/flutter_map_location.dart';
 import 'package:arcore_flutter_plugin/arcore_flutter_plugin.dart';
 import 'package:vector_math/vector_math_64.dart' as vector;
 import 'package:flutter/services.dart';
+import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
+import 'example_popup.dart';
 
 
 List<Marker> centroidsManzanas = [];
@@ -44,6 +46,10 @@ class InitialMap extends StatelessWidget {
     final MapController mapController = MapController();
     final List<Marker> userLocationMarkers = <Marker>[];
     // List<Marker> centroidsManzanas
+    final PopupController _popupLayerController = PopupController();
+    // final PopupSnap popupSnap;
+    //
+    // MapPageScaffold(this.popupSnap);
 
     // dbHelper.initDb();
     // List<Marker> centroidsManzanas;
@@ -154,7 +160,7 @@ class InitialMap extends StatelessWidget {
                       if (ld == null || ld.location == null) {
                         return;
                       }
-                      mapController?.move(ld.location, 16.0);
+                      mapController?.move(ld.location, 18.0);
                     },
                     buttonBuilder: (BuildContext context,
                         ValueNotifier<LocationServiceStatus> status,
@@ -210,7 +216,13 @@ class InitialMap extends StatelessWidget {
                   ),
                 MarkerLayerOptions(
                   markers: centroidsManzanas,
-                )
+                ),
+                  // PopupMarkerLayerOptions(
+                  //   markers: centroidsManzanas,
+                  //   // popupSnap: widget.popupSnap,
+                  //   popupController: _popupLayerController,
+                  //   popupBuilder: (BuildContext _, Marker marker) => ExamplePopup(marker),
+                  // ),
                 ],
               )
             )
@@ -250,7 +262,7 @@ Future<List<Marker>> getCentroids() async {
       point: LatLng(element.latitud, element.longitud),
         builder: (ctx) =>
             Container(
-              child: Icon(Icons.add)
+              child: Icon(Icons.location_on)
             )
       // builder: (ctx) => {}
     );
