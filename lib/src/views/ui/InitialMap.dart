@@ -56,7 +56,7 @@ class InitialMap extends StatelessWidget {
         style: TextStyle(
         color: Color(0xffffffff),
       ),),
-      backgroundColor: hexToColor("#B91450"),
+      backgroundColor: Colors.transparent,
       actions: [
         IconButton(
             icon: Icon(Icons.search),
