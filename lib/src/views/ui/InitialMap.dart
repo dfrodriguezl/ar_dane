@@ -13,6 +13,7 @@ import 'package:latlong/latlong.dart';
 import 'package:flutter_map_location/flutter_map_location.dart';
 import 'package:arcore_flutter_plugin/arcore_flutter_plugin.dart';
 import 'package:material_floating_search_bar/material_floating_search_bar.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import 'package:vector_math/vector_math_64.dart' as vector;
 import 'package:flutter/services.dart';
 import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
@@ -45,10 +46,19 @@ class InitialMap extends StatelessWidget {
   List<Address> filteredSearchHistory = [];
   final MapController mapController = MapController();
   FloatingSearchBarController controller = FloatingSearchBarController();
+  double latBef = null;
+  double lonBef = null;
 
-  void main() async {
-    await getMarkersCentroids();
-  }
+  //libs to tutorial
+  TutorialCoachMark tutorialCoachMark;
+  List<TargetFocus> targets = [];
+  GlobalKey keyCurrentLoc = GlobalKey();
+  GlobalKey _keyMarker = GlobalKey();
+  GlobalKey _key2SearchBar = GlobalKey();
+
+  // void main() async {
+  //   await getMarkersCentroids();
+  // }
 
 
 
@@ -66,7 +76,8 @@ class InitialMap extends StatelessWidget {
     // dbHelper.initDb();
     // List<Marker> centroidsManzanas;
 
-    main();
+    // main();
+    showTutorial(context);
 
     return Scaffold(
       // appBar: AppBar(
@@ -169,12 +180,24 @@ class InitialMap extends StatelessWidget {
                               markers: userLocationMarkers,
                               onLocationUpdate: (LatLngData ld) {
                                 print('Location updated: ${ld?.location}');
+
                               },
-                              onLocationRequested: (LatLngData ld) {
+                              onLocationRequested: (LatLngData ld)  async {
                                 if (ld == null || ld.location == null) {
                                   return;
                                 }
                                 mapController?.move(ld.location, 18.0);
+                                double buffer = 0.00135000135;
+                                if(lonBef != ld.location.longitude && latBef != ld.location.latitude){
+                                  lonBef = ld.location.longitude;
+                                  latBef = ld.location.latitude;
+                                  await getMarkersCentroids(ld.location.latitude - buffer,ld.location.longitude - buffer,ld.location.latitude + buffer,ld.location.longitude + buffer);
+                                  print(lonBef);
+                                  print(latBef);
+                                }
+
+
+
                               },
                               buttonBuilder: (BuildContext context,
                                   ValueNotifier<LocationServiceStatus> status,
@@ -187,6 +210,8 @@ class InitialMap extends StatelessWidget {
                                         children: [
                                           SizedBox(height: 10),
                                           FloatingActionButton(
+                                            key: keyCurrentLoc,
+                                             elevation: 6,
                                               heroTag: "btn1",
                                               backgroundColor: hexToColor("#B91450"),
                                               child: ValueListenableBuilder<LocationServiceStatus>(
@@ -214,6 +239,8 @@ class InitialMap extends StatelessWidget {
                                               onPressed: () => onPressed()),
                                           SizedBox(height: 10),
                                           FloatingActionButton(
+                                            key: _keyMarker,
+                                            elevation: 6,
                                             heroTag: "btn2",
                                             backgroundColor: hexToColor("#B91450"),
                                             onPressed: () {
@@ -325,6 +352,7 @@ class InitialMap extends StatelessWidget {
     final HttpService httpService = HttpService();
 
     return FloatingSearchBar(
+      key: _key2SearchBar,
       controller: controller,
       hint: 'Buscar sitio...',
       hintStyle: TextStyle(
@@ -366,7 +394,7 @@ class InitialMap extends StatelessWidget {
         filteredSearchHistory = await httpService.getPosts(query);
         // updateSearch(as);
 
-        print(query);
+        // print(query);
       },
       // Specify a custom transition to be used for
       // animating between opened and closed stated.
@@ -406,7 +434,7 @@ class InitialMap extends StatelessWidget {
                       LatLng corner2 = new LatLng(double.parse(bb_list[1]),double.parse(bb_list[2]));
                       LatLngBounds extent = new LatLngBounds(corner1,corner2);
                       // List<String> bbs = (jsonDecode(add.bounding_box) as List<dynamic>).cast<String>();
-                      print(bb_list);
+                      // print(bb_list);
                       _gotoLocation(lat,lon,extent);
                       controller.close();
                     },
@@ -434,11 +462,122 @@ class InitialMap extends StatelessWidget {
     );
   }
 
+  void showTutorial(BuildContext context){
+    // targets.add(
+    //   TargetFocus(
+    //     identify: "Target 1",
+    //     keyTarget: keyCurrentLoc,
+    //     contents: [
+    //       TargetContent(
+    //         align: ContentAlign.bottom,
+    //         child: Container(
+    //           child: Column(
+    //             mainAxisSize: MainAxisSize.min,
+    //             crossAxisAlignment: CrossAxisAlignment.center,
+    //             mainAxisAlignment: MainAxisAlignment.center,
+    //             children: <Widget>[
+    //               Text(
+    //                 "Mi ubicación actual",
+    //                 style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 20.0),
+    //               ),
+    //               // Padding(
+    //               //   padding: const EdgeInsets.only(top: 10.0),
+    //               //   child: Text(
+    //               //     "Mi ubicación actual",
+    //               //     style: TextStyle(color: Colors.black),
+    //               //   ),
+    //               // )
+    //             ],
+    //           )
+    //         )
+    //       ),
+    //
+    //     ]
+    //   ),
+    //
+    // );
+    //
+    // targets.add(
+    //     TargetFocus(
+    //         identify: "Target 2",
+    //         keyTarget: _keyMarker,
+    //         contents: [
+    //           TargetContent(
+    //               align: ContentAlign.bottom,
+    //               child: Container(
+    //                   child: Column(
+    //                     mainAxisSize: MainAxisSize.min,
+    //                     crossAxisAlignment: CrossAxisAlignment.center,
+    //                     mainAxisAlignment: MainAxisAlignment.center,
+    //                     children: <Widget>[
+    //                       Text(
+    //                         "Definir manualmente",
+    //                         style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 20.0),
+    //                       ),
+    //                       // Padding(
+    //                       //   padding: const EdgeInsets.only(top: 10.0),
+    //                       //   child: Text(
+    //                       //     "Mi ubicación actual",
+    //                       //     style: TextStyle(color: Colors.black),
+    //                       //   ),
+    //                       // )
+    //                     ],
+    //                   )
+    //               )
+    //           ),
+    //
+    //         ]
+    //     )
+    // );
+
+    targets.add(
+        TargetFocus(
+            identify: "Target 3",
+            keyTarget: _key2SearchBar,
+            contents: [
+              TargetContent(
+                  align: ContentAlign.bottom,
+                  child: Container(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          Text(
+                            "Buscar un sitio",
+                            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 20.0),
+                          ),
+                          // Padding(
+                          //   padding: const EdgeInsets.only(top: 10.0),
+                          //   child: Text(
+                          //     "Mi ubicación actual",
+                          //     style: TextStyle(color: Colors.black),
+                          //   ),
+                          // )
+                        ],
+                      )
+                  )
+              ),
+
+            ]
+        )
+    );
+
+    tutorialCoachMark = TutorialCoachMark(
+        context,
+        targets: targets,
+        // colorShadow: Color(0x80000000),
+        textStyleSkip: TextStyle(
+          color: Colors.white
+        )
+    )..show();
+  }
+
 
 }
 
-getMarkersCentroids() async {
-  centroidsManzanas = await getCentroids();
+getMarkersCentroids(double startLat, double startLon,double endLat, double endLon) async {
+  centroidsManzanas = await getCentroids(startLat, startLon,endLat, endLon);
   // print(centroidsManzanas);
   // setState(() {});
 }
@@ -451,10 +590,10 @@ Color hexToColor(String code) {
 }
 
 /// Get centroids
-Future<List<Marker>> getCentroids() async {
+Future<List<Marker>> getCentroids(double startLat, double startLon,double endLat, double endLon) async {
   // Future<List<Marker>> markersCnpv = Future;
   List<Marker> ms = <Marker>[];
-  List<Manzana> manzanas = await Manzana().retrieveManzanas();
+  List<Manzana> manzanas = await Manzana().retrieveManzanas( startLat,  startLon, endLat, endLon);
   manzanas.forEach((element) {
     Marker m = Marker(
       width: 20.0,
@@ -466,6 +605,7 @@ Future<List<Marker>> getCentroids() async {
             )
       // builder: (ctx) => {}
     );
+
     ms.add(m);
     print("Elemento manzana: ${element.cod_dane_a}");
   });

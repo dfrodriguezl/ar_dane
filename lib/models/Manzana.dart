@@ -57,9 +57,9 @@ class Manzana {
     };
   }
 
-  Future<List<Manzana>> retrieveManzanas() async {
+  Future<List<Manzana>> retrieveManzanas(double startLat, double startLon,double endLat, double endLon) async {
     final Database db = await DbHelper().initDb();
-    final List<Map<String, Object>> queryResult = await db.query('cnpv_11');
+    final List<Map<String, Object>> queryResult = await db.query('cnpv_11',where:'latitud between ? and ? and longitud between ? and ?',whereArgs: [startLat,endLat,startLon,endLon]);
     return queryResult.map((e) => Manzana.fromMap(e)).toList();
   }
 }
