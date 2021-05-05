@@ -21,6 +21,7 @@ import 'example_popup.dart';
 
 
 List<Marker> centroidsManzanas = [];
+List<Manzana> manzanas = [];
 
 final MaterialColor kPrimaryColor = const MaterialColor(
   0xffbe0c4d,
@@ -77,7 +78,7 @@ class InitialMap extends StatelessWidget {
     // List<Marker> centroidsManzanas;
 
     // main();
-    showTutorial(context);
+    // showTutorial(context);
 
     return Scaffold(
       // appBar: AppBar(
@@ -211,7 +212,7 @@ class InitialMap extends StatelessWidget {
                                           SizedBox(height: 10),
                                           FloatingActionButton(
                                             key: keyCurrentLoc,
-                                             elevation: 6,
+                                             elevation: 50,
                                               heroTag: "btn1",
                                               backgroundColor: hexToColor("#B91450"),
                                               child: ValueListenableBuilder<LocationServiceStatus>(
@@ -240,13 +241,15 @@ class InitialMap extends StatelessWidget {
                                           SizedBox(height: 10),
                                           FloatingActionButton(
                                             key: _keyMarker,
-                                            elevation: 6,
+                                            elevation: 50,
                                             heroTag: "btn2",
                                             backgroundColor: hexToColor("#B91450"),
                                             onPressed: () {
                                               Navigator.push(context,
                                                   MaterialPageRoute(
-                                                      builder: (_) => ARCoreScreen()));
+                                                      builder: (_) => ARCoreScreen(markersAround: manzanas)
+                                                  )
+                                              );
                                             },
                                             child: Icon(Icons.add_location_alt_outlined,
                                               color: Color(0xffffffff),),
@@ -463,77 +466,44 @@ class InitialMap extends StatelessWidget {
   }
 
   void showTutorial(BuildContext context){
-    // targets.add(
-    //   TargetFocus(
-    //     identify: "Target 1",
-    //     keyTarget: keyCurrentLoc,
-    //     contents: [
-    //       TargetContent(
-    //         align: ContentAlign.bottom,
-    //         child: Container(
-    //           child: Column(
-    //             mainAxisSize: MainAxisSize.min,
-    //             crossAxisAlignment: CrossAxisAlignment.center,
-    //             mainAxisAlignment: MainAxisAlignment.center,
-    //             children: <Widget>[
-    //               Text(
-    //                 "Mi ubicación actual",
-    //                 style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 20.0),
-    //               ),
-    //               // Padding(
-    //               //   padding: const EdgeInsets.only(top: 10.0),
-    //               //   child: Text(
-    //               //     "Mi ubicación actual",
-    //               //     style: TextStyle(color: Colors.black),
-    //               //   ),
-    //               // )
-    //             ],
-    //           )
-    //         )
-    //       ),
-    //
-    //     ]
-    //   ),
-    //
-    // );
-    //
-    // targets.add(
-    //     TargetFocus(
-    //         identify: "Target 2",
-    //         keyTarget: _keyMarker,
-    //         contents: [
-    //           TargetContent(
-    //               align: ContentAlign.bottom,
-    //               child: Container(
-    //                   child: Column(
-    //                     mainAxisSize: MainAxisSize.min,
-    //                     crossAxisAlignment: CrossAxisAlignment.center,
-    //                     mainAxisAlignment: MainAxisAlignment.center,
-    //                     children: <Widget>[
-    //                       Text(
-    //                         "Definir manualmente",
-    //                         style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 20.0),
-    //                       ),
-    //                       // Padding(
-    //                       //   padding: const EdgeInsets.only(top: 10.0),
-    //                       //   child: Text(
-    //                       //     "Mi ubicación actual",
-    //                       //     style: TextStyle(color: Colors.black),
-    //                       //   ),
-    //                       // )
-    //                     ],
-    //                   )
-    //               )
-    //           ),
-    //
-    //         ]
-    //     )
-    // );
+    targets.add(
+      TargetFocus(
+        identify: "Target 1",
+        keyTarget: keyCurrentLoc,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            child: Container(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Text(
+                    "Mi ubicación actual",
+                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 20.0),
+                  ),
+                  // Padding(
+                  //   padding: const EdgeInsets.only(top: 10.0),
+                  //   child: Text(
+                  //     "Mi ubicación actual",
+                  //     style: TextStyle(color: Colors.black),
+                  //   ),
+                  // )
+                ],
+              )
+            )
+          ),
+
+        ]
+      ),
+
+    );
 
     targets.add(
         TargetFocus(
-            identify: "Target 3",
-            keyTarget: _key2SearchBar,
+            identify: "Target 2",
+            keyTarget: _keyMarker,
             contents: [
               TargetContent(
                   align: ContentAlign.bottom,
@@ -544,7 +514,7 @@ class InitialMap extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: <Widget>[
                           Text(
-                            "Buscar un sitio",
+                            "Definir manualmente",
                             style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 20.0),
                           ),
                           // Padding(
@@ -562,6 +532,39 @@ class InitialMap extends StatelessWidget {
             ]
         )
     );
+
+    // targets.add(
+    //     TargetFocus(
+    //         identify: "Target 3",
+    //         keyTarget: _key2SearchBar,
+    //         contents: [
+    //           TargetContent(
+    //               align: ContentAlign.bottom,
+    //               child: Container(
+    //                   child: Column(
+    //                     mainAxisSize: MainAxisSize.min,
+    //                     crossAxisAlignment: CrossAxisAlignment.center,
+    //                     mainAxisAlignment: MainAxisAlignment.center,
+    //                     children: <Widget>[
+    //                       Text(
+    //                         "Buscar un sitio",
+    //                         style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 20.0),
+    //                       ),
+    //                       // Padding(
+    //                       //   padding: const EdgeInsets.only(top: 10.0),
+    //                       //   child: Text(
+    //                       //     "Mi ubicación actual",
+    //                       //     style: TextStyle(color: Colors.black),
+    //                       //   ),
+    //                       // )
+    //                     ],
+    //                   )
+    //               )
+    //           ),
+    //
+    //         ]
+    //     )
+    // );
 
     tutorialCoachMark = TutorialCoachMark(
         context,
@@ -593,7 +596,7 @@ Color hexToColor(String code) {
 Future<List<Marker>> getCentroids(double startLat, double startLon,double endLat, double endLon) async {
   // Future<List<Marker>> markersCnpv = Future;
   List<Marker> ms = <Marker>[];
-  List<Manzana> manzanas = await Manzana().retrieveManzanas( startLat,  startLon, endLat, endLon);
+  manzanas = await Manzana().retrieveManzanas( startLat,  startLon, endLat, endLon);
   manzanas.forEach((element) {
     Marker m = Marker(
       width: 20.0,
