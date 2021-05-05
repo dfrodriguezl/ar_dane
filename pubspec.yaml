@@ -41,6 +41,9 @@ dependencies:
   flutter_map_marker_popup: ^0.2.1
   material_floating_search_bar: ^0.3.4
   tutorial_coach_mark: ^1.0.0
+  permission_handler: ^5.1.0
+  select_form_field: ^2.0.0
+
 
 #  flappy_search_bar: ^1.7.2
 

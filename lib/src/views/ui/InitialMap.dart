@@ -1,6 +1,7 @@
 // import 'package:flappy_search_bar/flappy_search_bar.dart';
 // import 'package:flappy_search_bar/search_bar_style.dart';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_app/models/DbHelper.dart';
@@ -13,6 +14,7 @@ import 'package:latlong/latlong.dart';
 import 'package:flutter_map_location/flutter_map_location.dart';
 import 'package:arcore_flutter_plugin/arcore_flutter_plugin.dart';
 import 'package:material_floating_search_bar/material_floating_search_bar.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import 'package:vector_math/vector_math_64.dart' as vector;
 import 'package:flutter/services.dart';
@@ -56,6 +58,8 @@ class InitialMap extends StatelessWidget {
   GlobalKey _keyMarker = GlobalKey();
   GlobalKey _key2SearchBar = GlobalKey();
 
+
+
   // void main() async {
   //   await getMarkersCentroids();
   // }
@@ -64,6 +68,15 @@ class InitialMap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+
+    requestPermissions();
+    //
+    //
+    //
+    //
+    //
+    // _createFolder();
 
     final List<Marker> userLocationMarkers = <Marker>[];
     GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey();
@@ -77,7 +90,7 @@ class InitialMap extends StatelessWidget {
     // List<Marker> centroidsManzanas;
 
     // main();
-    showTutorial(context);
+    // showTutorial(context);
 
     return Scaffold(
       // appBar: AppBar(
@@ -616,6 +629,39 @@ Future<List<Marker>> getCentroids(double startLat, double startLon,double endLat
   });
 
 
+}
+
+_createFolder() async {
+  final folderName = "ARCNPV2018";
+  final path = Directory("storage/emulated/0/$folderName");
+  if ((await path.exists())) {
+    final pathDb = Directory("storage/emulated/0/$folderName/db");
+    if ((await pathDb.exists())) {
+      print("exist db");
+    }else{
+      print("not exist db");
+      pathDb.create();
+    }
+    // TODO:
+    print("exist");
+  } else {
+    // TODO:
+    print("not exist");
+    path.create();
+  }
+}
+
+requestPermissions() async {
+  // You can request multiple permissions at once.
+  Map<Permission, PermissionStatus> statuses = await [
+    Permission.storage,
+  ].request();
+
+  if (await Permission.storage.request().isGranted) {
+    // Either the permission was already granted before or the user just granted it.
+    _createFolder();
+  }
+  // print(statuses[Permission.location]);
 }
 
 

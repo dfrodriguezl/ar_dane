@@ -5,6 +5,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_app/src/views/ui/DownloadScreen.dart';
 import 'package:flutter_app/src/views/ui/InitialMap.dart';
 
 
@@ -54,7 +55,8 @@ class _MyAppState extends State<MyApp> {
         } else {
           // Loading is done, return the app:
           return MaterialApp(
-            home: new InitialMap()
+            home: new DownloadScreen(),
+            // home: new InitialMap()
           );
         }
       },
