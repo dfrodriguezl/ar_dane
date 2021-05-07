@@ -174,6 +174,9 @@ class InitialMap extends StatelessWidget {
                             interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate,
                             center: LatLng(4, -74),
                             zoom: 13.0,
+                            onTap: (point) {
+                              identify(point);
+                            }
                           ),
                           layers: [
                             TileLayerOptions(
@@ -754,6 +757,30 @@ void actualizarLeyenda(){
       color: Color(0xff7a0177),
     ),
   ),));
+}
+
+void identify(LatLng pnt){
+  print("Point");
+  print(pnt);
+  jts.Point pntIdentify = new jts.Point(jts.Coordinate(pnt.longitude,pnt.latitude),jts.PrecisionModel(),4326);
+  //Validar cual polígono se selecciono
+  for(final mz in centroidsManzanas){
+    List<LatLng> points = mz.points;
+    List<jts.Coordinate> coordsArray = [];
+    points.forEach((p){
+      coordsArray.add(jts.Coordinate(p.longitude,p.latitude));
+    });
+    jts.LinearRing ringPol = new jts.LinearRing(coordsArray,jts.PrecisionModel(),4326);
+    jts.Polygon polJts = new jts.Polygon(ringPol,jts.PrecisionModel(),4326);
+    bool intersects = false;
+    intersects = polJts.intersects(pntIdentify);
+    if(intersects){
+      print("Manzana click");
+      print(mz);
+      break;
+    }
+  }
+
 }
 
 
