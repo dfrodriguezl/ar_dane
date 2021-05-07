@@ -1,8 +1,12 @@
 
 
 
+import 'dart:io';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_app/src/views/ui/InitialMap.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:select_form_field/select_form_field.dart';
 
 final List<Map<String, dynamic>> _items = [
@@ -20,6 +24,8 @@ final List<Map<String, dynamic>> _items = [
   },
 ];
 
+String valueDepto = "11";
+
 class DownloadScreen extends StatefulWidget {
 
   @override
@@ -27,6 +33,11 @@ class DownloadScreen extends StatefulWidget {
 }
 
 class _DownloadScreenState extends State<DownloadScreen> {
+
+  bool downloading =  false;
+  String downloadStr = "No data";
+  double download = 0.0;
+  double _downloadProgress = 0.0;
 
   @override
   Widget build(BuildContext context) {
@@ -103,13 +114,129 @@ class _DownloadScreenState extends State<DownloadScreen> {
                               builder: (_) => InitialMap()));
                     },
                   )
-                )
+                ),
+          downloading?Container(
+              height:200,
+              width:200,
+              child: Card(
+                  color: Colors.white,
+                  child:Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(value:_downloadProgress, valueColor: new AlwaysStoppedAnimation(hexToColor("#B91450")),),
+                        SizedBox(height:20),
+                        Text(downloadStr,style:TextStyle(color:hexToColor("#B91450")))
+                      ]
+                  )
+              ),
+          ):Container(
+            child: download==0?Text(" "):download==100?Text("Descarga terminada!!",style:TextStyle(color: hexToColor("#B91450"))):Text("")
+
+          )
               ],
             )
             // child:
           )
 
         )
+    );
+  }
+
+  void downloadBD(String ciudad,BuildContext contexts){
+    var url_geoportal = "https://geoportal.dane.gov.co/descargas/mgn_cnpv_2018/$ciudad.db";
+    File f;
+    Dio dio = Dio();
+    final dir = Directory("storage/emulated/0/ARCNPV2018/db");
+    f = File("${dir.path}/$ciudad.db");
+    String fileName = url_geoportal.substring(url_geoportal.lastIndexOf("/") + 1);
+    Navigator.pop(contexts);
+    // Navigator.of(contexts, rootNavigator: true).pop();
+    dio.download(url_geoportal, "${dir.path}/$fileName",onReceiveProgress: (rec,total){
+      setState((){
+          downloading = true;
+          _downloadProgress = (rec/total);
+          download = _downloadProgress*100;
+          // print(fileName);
+
+          if(download == 100){
+            downloadStr = "db descargada";
+            downloading = false;
+          }else{
+            downloadStr = "Descargando " + (download).toStringAsFixed(0) + "%";
+          }
+          // print(downloadStr);
+      });
+    });
+    print(url_geoportal);
+
+  }
+
+  Widget showDialogDeptos(BuildContext context){
+
+    showDialog(
+        context: context,
+        builder: (BuildContext contextDialog) {
+          return AlertDialog(
+              title: Text("Descargar departamento", style: TextStyle(color:hexToColor("#B91450") ),),
+              content: Wrap(
+                children: [
+                  Center(
+                      child: Container(
+                        child: Column(
+                          // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          // mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SelectFormField(
+                                type: SelectFormFieldType.dropdown, // or can be dialog
+                                initialValue: '11',
+                                items: _items,
+                                onChanged: (val) => valueDepto = val,
+                                onSaved: (val) => print(val),
+                              ),
+                              Padding(
+                                padding: EdgeInsets.only(top:20,bottom:20),
+                                child: TextButton.icon(
+                                  icon: Icon(Icons.cloud_download_outlined ),
+                                  label: Text("Descargar"),
+                                  style: TextButton.styleFrom(
+                                    primary: Colors.white,
+                                    backgroundColor: hexToColor("#B91450"),
+                                    onSurface: Colors.white,
+                                  ),
+                                  onPressed:(){
+
+                                    downloadBD(valueDepto,contextDialog);
+                                    // showDialogDeptos(context);
+                                  },
+                                ),
+                              ),
+
+                            ]
+                        ),
+                      )
+                  ),
+                  downloading?downloadSection():Container()
+                ],
+              )
+          );
+        });
+  }
+
+  Widget downloadSection(){
+    return Container(
+        height:200,
+        width:200,
+        child: Card(
+        color: Colors.pink,
+        child:Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+        CircularProgressIndicator(backgroundColor: Colors.white,),
+    SizedBox(height:20),
+    Text(downloadStr,style:TextStyle(color:Colors.white))
+    ]
+    )
+    )
     );
   }
 }
@@ -119,28 +246,17 @@ Color hexToColor(String code) {
   return new Color(int.parse(code.substring(1, 7), radix: 16) + 0xFF000000);
 }
 
-Widget showDialogDeptos(BuildContext context){
-  showDialog(
-      context: context,
-      builder: (BuildContext contextDialog) {
-        return AlertDialog(
-          title: Text("Descargar departamento", style: TextStyle(color:hexToColor("#B91450") ),),
-          content: SelectFormField(
-            type: SelectFormFieldType.dropdown, // or can be dialog
-            initialValue: '11',
-            items: _items,
-            onChanged: (val) => showSnackBar(val,context),
-            onSaved: (val) => print(val),
-          ),
-        );
-      });
-}
+
+
 
 void showSnackBar(String value,BuildContext context)
 {
-  final snackBar = SnackBar(content: Text(value));
-  ScaffoldMessenger.of(context).showSnackBar(snackBar);
-  print(value);
-
+  Fluttertoast.showToast(
+      msg: value,
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.BOTTOM
+  );
 }
+
+
 

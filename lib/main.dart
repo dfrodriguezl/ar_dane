@@ -3,10 +3,12 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_app/src/views/ui/DownloadScreen.dart';
 import 'package:flutter_app/src/views/ui/InitialMap.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 
 const MaterialColor white = const MaterialColor(
@@ -45,6 +47,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
+    requestPermissions();
     return FutureBuilder(
       // Replace the 3 second delay with your initialization code:
       future: Future.delayed(Duration(seconds: 3)),
@@ -80,6 +83,39 @@ class Splash extends StatelessWidget {
       )
     );
   }
+}
+
+_createFolder() async {
+  final folderName = "ARCNPV2018";
+  final path = Directory("storage/emulated/0/$folderName");
+  if ((await path.exists())) {
+    final pathDb = Directory("storage/emulated/0/$folderName/db");
+    if ((await pathDb.exists())) {
+      print("exist db");
+    }else{
+      print("not exist db");
+      pathDb.create();
+    }
+    // TODO:
+    print("exist");
+  } else {
+    // TODO:
+    print("not exist");
+    path.create();
+  }
+}
+
+requestPermissions() async {
+  // You can request multiple permissions at once.
+  Map<Permission, PermissionStatus> statuses = await [
+    Permission.storage,
+  ].request();
+
+  if (await Permission.storage.request().isGranted) {
+    // Either the permission was already granted before or the user just granted it.
+    _createFolder();
+  }
+  // print(statuses[Permission.location]);
 }
 
 

@@ -14,15 +14,19 @@ import 'package:latlong/latlong.dart';
 import 'package:flutter_map_location/flutter_map_location.dart';
 import 'package:arcore_flutter_plugin/arcore_flutter_plugin.dart';
 import 'package:material_floating_search_bar/material_floating_search_bar.dart';
+import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
+import 'package:dart_jts/dart_jts.dart' as jts;
 import 'package:vector_math/vector_math_64.dart' as vector;
 import 'package:flutter/services.dart';
 import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
 import 'example_popup.dart';
 
 
-List<Marker> centroidsManzanas = [];
+List<Polygon> centroidsManzanas = <Polygon>[];
+List<Manzana> manzanas = [];
+List<ListTile> leyenda = [];
 
 final MaterialColor kPrimaryColor = const MaterialColor(
   0xffbe0c4d,
@@ -69,8 +73,9 @@ class InitialMap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
+    actualizarLeyenda();
 
-    requestPermissions();
+    // requestPermissions();
     //
     //
     //
@@ -172,8 +177,12 @@ class InitialMap extends StatelessWidget {
                           ),
                           layers: [
                             TileLayerOptions(
-                                urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                                urlTemplate: "https://tiles.wmflabs.org/bw-mapnik/{z}/{x}/{y}.png",
                                 subdomains: ['a', 'b', 'c']
+                            ),
+                            PolygonLayerOptions(
+
+                                polygons: centroidsManzanas
                             ),
                             MarkerLayerOptions(markers: userLocationMarkers),
                             // MarkerLayerOptions(
@@ -189,7 +198,9 @@ class InitialMap extends StatelessWidget {
                             //     ),
                             //   ],
                             // ),
+
                             LocationOptions(
+
                               markers: userLocationMarkers,
                               onLocationUpdate: (LatLngData ld) {
                                 print('Location updated: ${ld?.location}');
@@ -200,13 +211,13 @@ class InitialMap extends StatelessWidget {
                                   return;
                                 }
                                 mapController?.move(ld.location, 18.0);
-                                double buffer = 0.00135000135;
+                                double buffer = 0.00135000135*2;
                                 if(lonBef != ld.location.longitude && latBef != ld.location.latitude){
                                   lonBef = ld.location.longitude;
                                   latBef = ld.location.latitude;
                                   await getMarkersCentroids(ld.location.latitude - buffer,ld.location.longitude - buffer,ld.location.latitude + buffer,ld.location.longitude + buffer);
-                                  print(lonBef);
-                                  print(latBef);
+                                  // print(lonBef);
+                                  // print(latBef);
                                 }
 
 
@@ -216,6 +227,7 @@ class InitialMap extends StatelessWidget {
                                   ValueNotifier<LocationServiceStatus> status,
                                   Function onPressed) {
                                 return Align(
+
                                   alignment: Alignment.bottomRight,
                                   child: Padding(
                                     padding: const EdgeInsets.only(top: 100.0, right: 16.0),
@@ -223,8 +235,8 @@ class InitialMap extends StatelessWidget {
                                         children: [
                                           SizedBox(height: 10),
                                           FloatingActionButton(
+                                            elevation: 10000,
                                             key: keyCurrentLoc,
-                                             elevation: 6,
                                               heroTag: "btn1",
                                               backgroundColor: hexToColor("#B91450"),
                                               child: ValueListenableBuilder<LocationServiceStatus>(
@@ -253,15 +265,59 @@ class InitialMap extends StatelessWidget {
                                           SizedBox(height: 10),
                                           FloatingActionButton(
                                             key: _keyMarker,
-                                            elevation: 6,
+                                            elevation: 50,
                                             heroTag: "btn2",
                                             backgroundColor: hexToColor("#B91450"),
                                             onPressed: () {
                                               Navigator.push(context,
                                                   MaterialPageRoute(
-                                                      builder: (_) => ARCoreScreen()));
+                                                      builder: (_) => ARCoreScreen(markersAround: manzanas)
+                                                  )
+                                              );
                                             },
                                             child: Icon(Icons.add_location_alt_outlined,
+                                              color: Color(0xffffffff),),
+                                          ),
+                                          SizedBox(height: 10),
+                                          FloatingActionButton(
+                                            heroTag: "btn3",
+                                            backgroundColor: hexToColor("#B91450"),
+                                            onPressed: () {
+                                              showMaterialModalBottomSheet(
+                                                  // elevation: 10,
+                                                context: context,
+                                                builder: (contextB) => Container(
+                                                  width: 300,
+                                                  height: 300,
+                                                  child: ListView(
+                                                          children: leyenda,
+                                                        )
+                                                  // width: 300,
+                                                  // height: 300,
+                                                  // child: Column(
+                                                  //   mainAxisAlignment: MainAxisAlignment.center,
+                                                  //   children: [
+                                                  //     // Text("Leyenda (Número de viviendas)",style: TextStyle(color: Colors.black),),
+                                                  //     ListView(
+                                                  //       children: leyenda,
+                                                  //     ),
+                                                  //   ],
+                                                  // )
+                                                  // child: new ListView(
+                                                  //   children: leyenda,
+                                                  // ),
+                                                // child:new ListView(
+                                                //   children: leyenda
+                                                // )
+                                              )
+                                              );
+                                              // Navigator.push(context,
+                                              //     MaterialPageRoute(
+                                              //         builder: (_) => ARCoreScreen(markersAround: manzanas)
+                                              //     )
+                                              // );
+                                            },
+                                            child: Icon(Icons.format_list_bulleted,
                                               color: Color(0xffffffff),),
                                           ),
                                           // FloatingActionButton(
@@ -282,9 +338,10 @@ class InitialMap extends StatelessWidget {
                                 );
                               },
                             ),
-                            MarkerLayerOptions(
-                              markers: centroidsManzanas,
-                            ),
+                            // MarkerLayerOptions(
+                            //   markers: centroidsManzanas,
+                            // ),
+
                             // PopupMarkerLayerOptions(
                             //   markers: centroidsManzanas,
                             //   // popupSnap: widget.popupSnap,
@@ -476,77 +533,44 @@ class InitialMap extends StatelessWidget {
   }
 
   void showTutorial(BuildContext context){
-    // targets.add(
-    //   TargetFocus(
-    //     identify: "Target 1",
-    //     keyTarget: keyCurrentLoc,
-    //     contents: [
-    //       TargetContent(
-    //         align: ContentAlign.bottom,
-    //         child: Container(
-    //           child: Column(
-    //             mainAxisSize: MainAxisSize.min,
-    //             crossAxisAlignment: CrossAxisAlignment.center,
-    //             mainAxisAlignment: MainAxisAlignment.center,
-    //             children: <Widget>[
-    //               Text(
-    //                 "Mi ubicación actual",
-    //                 style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 20.0),
-    //               ),
-    //               // Padding(
-    //               //   padding: const EdgeInsets.only(top: 10.0),
-    //               //   child: Text(
-    //               //     "Mi ubicación actual",
-    //               //     style: TextStyle(color: Colors.black),
-    //               //   ),
-    //               // )
-    //             ],
-    //           )
-    //         )
-    //       ),
-    //
-    //     ]
-    //   ),
-    //
-    // );
-    //
-    // targets.add(
-    //     TargetFocus(
-    //         identify: "Target 2",
-    //         keyTarget: _keyMarker,
-    //         contents: [
-    //           TargetContent(
-    //               align: ContentAlign.bottom,
-    //               child: Container(
-    //                   child: Column(
-    //                     mainAxisSize: MainAxisSize.min,
-    //                     crossAxisAlignment: CrossAxisAlignment.center,
-    //                     mainAxisAlignment: MainAxisAlignment.center,
-    //                     children: <Widget>[
-    //                       Text(
-    //                         "Definir manualmente",
-    //                         style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 20.0),
-    //                       ),
-    //                       // Padding(
-    //                       //   padding: const EdgeInsets.only(top: 10.0),
-    //                       //   child: Text(
-    //                       //     "Mi ubicación actual",
-    //                       //     style: TextStyle(color: Colors.black),
-    //                       //   ),
-    //                       // )
-    //                     ],
-    //                   )
-    //               )
-    //           ),
-    //
-    //         ]
-    //     )
-    // );
+    targets.add(
+      TargetFocus(
+        identify: "Target 1",
+        keyTarget: keyCurrentLoc,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            child: Container(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Text(
+                    "Mi ubicación actual",
+                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 20.0),
+                  ),
+                  // Padding(
+                  //   padding: const EdgeInsets.only(top: 10.0),
+                  //   child: Text(
+                  //     "Mi ubicación actual",
+                  //     style: TextStyle(color: Colors.black),
+                  //   ),
+                  // )
+                ],
+              )
+            )
+          ),
+
+        ]
+      ),
+
+    );
 
     targets.add(
         TargetFocus(
-            identify: "Target 3",
-            keyTarget: _key2SearchBar,
+            identify: "Target 2",
+            keyTarget: _keyMarker,
             contents: [
               TargetContent(
                   align: ContentAlign.bottom,
@@ -557,7 +581,7 @@ class InitialMap extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: <Widget>[
                           Text(
-                            "Buscar un sitio",
+                            "Definir manualmente",
                             style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 20.0),
                           ),
                           // Padding(
@@ -575,6 +599,39 @@ class InitialMap extends StatelessWidget {
             ]
         )
     );
+
+    // targets.add(
+    //     TargetFocus(
+    //         identify: "Target 3",
+    //         keyTarget: _key2SearchBar,
+    //         contents: [
+    //           TargetContent(
+    //               align: ContentAlign.bottom,
+    //               child: Container(
+    //                   child: Column(
+    //                     mainAxisSize: MainAxisSize.min,
+    //                     crossAxisAlignment: CrossAxisAlignment.center,
+    //                     mainAxisAlignment: MainAxisAlignment.center,
+    //                     children: <Widget>[
+    //                       Text(
+    //                         "Buscar un sitio",
+    //                         style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 20.0),
+    //                       ),
+    //                       // Padding(
+    //                       //   padding: const EdgeInsets.only(top: 10.0),
+    //                       //   child: Text(
+    //                       //     "Mi ubicación actual",
+    //                       //     style: TextStyle(color: Colors.black),
+    //                       //   ),
+    //                       // )
+    //                     ],
+    //                   )
+    //               )
+    //           ),
+    //
+    //         ]
+    //     )
+    // );
 
     tutorialCoachMark = TutorialCoachMark(
         context,
@@ -603,66 +660,105 @@ Color hexToColor(String code) {
 }
 
 /// Get centroids
-Future<List<Marker>> getCentroids(double startLat, double startLon,double endLat, double endLon) async {
+Future<List<Polygon>> getCentroids(double startLat, double startLon,double endLat, double endLon) async {
   // Future<List<Marker>> markersCnpv = Future;
   List<Marker> ms = <Marker>[];
-  List<Manzana> manzanas = await Manzana().retrieveManzanas( startLat,  startLon, endLat, endLon);
-  manzanas.forEach((element) {
-    Marker m = Marker(
-      width: 20.0,
-      height: 20.0,
-      point: LatLng(element.latitud, element.longitud),
-        builder: (ctx) =>
-            Container(
-              child: Icon(Icons.location_on)
-            )
-      // builder: (ctx) => {}
-    );
+  List<Polygon> ps = <Polygon>[];
+  manzanas = await Manzana().retrieveManzanas( startLat,  startLon, endLat, endLon);
 
-    ms.add(m);
+  manzanas.forEach((element) {
+    // print(element.geometry);
+    List<LatLng> verticesPolygon = <LatLng>[];
+    jts.Geometry polygon = jts.WKBReader().read(element.geometry);
+    List<jts.Coordinate> coordinatesPolygon = polygon.getCoordinates();
+    coordinatesPolygon.forEach((coord) {
+      LatLng vertice = new LatLng(coord.y,coord.x);
+      verticesPolygon.add(vertice);
+    });
+    Color color = null;
+    int indicator = element.tvivienda;
+
+
+    indicator>0 && indicator <= 57?color=Color(0xfffeebe3):
+    indicator>57 && indicator<= 192?color=Color(0xfffbb4b9):
+    indicator>192 && indicator <= 543?color=Color(0xfff768a1):
+    indicator>543 && indicator <= 1796?color=Color(0xffc51b8a):
+    indicator>1796 && indicator <= 4618?color=Color(0xff7a0177):0;
+
+
+    Polygon mapPol = new Polygon(points:verticesPolygon,color: color);
+    // print(polygon.getCoordinates());
+    // Marker m = Marker(
+    //   width: 20.0,
+    //   height: 20.0,
+    //   point: LatLng(element.latitud, element.longitud),
+    //     builder: (ctx) =>
+    //         Container(
+    //           child: Icon(Icons.location_on)
+    //         )
+    //   // builder: (ctx) => {}
+    // );
+
+    ps.add(mapPol);
     print("Elemento manzana: ${element.cod_dane_a}");
   });
 
   // markersCnpv = ms as Future<List<Marker>>;
   return Future((){
-    return ms;
+    return ps;
   });
 
 
 }
 
-_createFolder() async {
-  final folderName = "ARCNPV2018";
-  final path = Directory("storage/emulated/0/$folderName");
-  if ((await path.exists())) {
-    final pathDb = Directory("storage/emulated/0/$folderName/db");
-    if ((await pathDb.exists())) {
-      print("exist db");
-    }else{
-      print("not exist db");
-      pathDb.create();
-    }
-    // TODO:
-    print("exist");
-  } else {
-    // TODO:
-    print("not exist");
-    path.create();
-  }
+void actualizarLeyenda(){
+  leyenda = [];
+  leyenda.add(ListTile(title:Text("Leyenda (Número de viviendas)", style: TextStyle(fontWeight: FontWeight.bold),),));
+  leyenda.add(ListTile(title:Text("0 - 57"),leading: ClipRRect(
+    borderRadius: BorderRadius.circular(20.0),//or 15.0
+    child: Container(
+      height: 40.0,
+      width: 40.0,
+      color: Color(0xfffeebe3),
+    ),
+  ),));
+  leyenda.add(ListTile(title:Text("57 - 192"),leading: ClipRRect(
+    borderRadius: BorderRadius.circular(20.0),//or 15.0
+    child: Container(
+      height: 40.0,
+      width: 40.0,
+      color: Color(0xfffbb4b9),
+    ),
+  ),));
+  leyenda.add(ListTile(title:Text("192 - 543"),leading: ClipRRect(
+    borderRadius: BorderRadius.circular(20.0),//or 15.0
+    child: Container(
+      height: 40.0,
+      width: 40.0,
+      color: Color(0xfff768a1),
+    ),
+  ),));
+  leyenda.add(ListTile(title:Text("543 - 1796"),leading: ClipRRect(
+    borderRadius: BorderRadius.circular(20.0),//or 15.0
+    child: Container(
+      height: 40.0,
+      width: 40.0,
+      color: Color(0xffc51b8a),
+    ),
+  ),));
+  leyenda.add(ListTile(title:Text("1796 - 4618"),leading: ClipRRect(
+    borderRadius: BorderRadius.circular(20.0),//or 15.0
+    child: Container(
+      height: 40.0,
+      width: 40.0,
+      color: Color(0xff7a0177),
+    ),
+  ),));
 }
 
-requestPermissions() async {
-  // You can request multiple permissions at once.
-  Map<Permission, PermissionStatus> statuses = await [
-    Permission.storage,
-  ].request();
 
-  if (await Permission.storage.request().isGranted) {
-    // Either the permission was already granted before or the user just granted it.
-    _createFolder();
-  }
-  // print(statuses[Permission.location]);
-}
+
+
 
 
 

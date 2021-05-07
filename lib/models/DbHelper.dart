@@ -8,7 +8,7 @@ class DbHelper{
 
   Future initDb() async{
     final dbPath = await getDatabasesPath();
-    final path = join(dbPath,"cnpv.db"); //db file name
+    final path = join(dbPath,"11.db"); //db file name
 
     final exist = await databaseExists(path);
 
@@ -24,10 +24,17 @@ class DbHelper{
 
       }
 
-      ByteData data = await rootBundle.load(join("assets","cnpv.db"));
-      List<int> bytes = data.buffer.asUint8List(data.offsetInBytes,data.lengthInBytes);
+      File f;
+      final dir = Directory("storage/emulated/0/ARCNPV2018/db");
+      f = File("${dir.path}/11.db");
 
-      await File(path).writeAsBytes(bytes,flush:true);
+      File newDB = await f.copy(path);
+
+      // ByteData data = await rootBundle.load("storage/emulated/0/ARCNPV2018/db/11.db");
+      // // ByteData data = await rootBundle.load(join("assets","cnpv.db"));
+      // List<int> bytes = data.buffer.asUint8List(data.offsetInBytes,data.lengthInBytes);
+      //
+      // await File(path).writeAsBytes(bytes,flush:true);
     }
 
     return await openDatabase(path);

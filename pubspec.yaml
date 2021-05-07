@@ -43,7 +43,14 @@ dependencies:
   tutorial_coach_mark: ^1.0.0
   permission_handler: ^5.1.0
   select_form_field: ^2.0.0
-
+  geolocator: ^6.2.1
+  flutter_compass: ^0.5.1
+  flutter_tts: ^3.0.0
+  html: ^0.15.0
+  fluttertoast: ^3.1.0
+  dio: ^3.0.10
+  dart_jts: ^0.0.7+2
+  modal_bottom_sheet: ^2.0.0
 
 #  flappy_search_bar: ^1.7.2
 
