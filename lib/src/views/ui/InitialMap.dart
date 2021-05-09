@@ -1,5 +1,7 @@
 // import 'package:flappy_search_bar/flappy_search_bar.dart';
 // import 'package:flappy_search_bar/search_bar_style.dart';
+import 'dart:collection';
+
 import 'dart:convert';
 import 'dart:io';
 
@@ -7,9 +9,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_app/models/DbHelper.dart';
 import 'package:flutter_app/models/Manzana.dart';
 import 'package:flutter_app/models/address.dart';
+import 'package:flutter_app/models/variables.dart';
 import 'package:flutter_app/services/http_service.dart';
 import 'package:flutter_app/src/views/ui/ARCoreScreen.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:latlong/latlong.dart';
 import 'package:flutter_map_location/flutter_map_location.dart';
 import 'package:arcore_flutter_plugin/arcore_flutter_plugin.dart';
@@ -27,6 +31,10 @@ import 'example_popup.dart';
 List<Polygon> centroidsManzanas = <Polygon>[];
 List<Manzana> manzanas = [];
 List<ListTile> leyenda = [];
+HashMap dataPolygons = HashMap<int,String>();
+String variableSeleccionada = "tvivienda";
+String nombreVariableSel = "";
+List<Rango> rangos = <Rango>[];
 
 final MaterialColor kPrimaryColor = const MaterialColor(
   0xffbe0c4d,
@@ -64,6 +72,8 @@ class InitialMap extends StatelessWidget {
 
 
 
+
+
   // void main() async {
   //   await getMarkersCentroids();
   // }
@@ -73,7 +83,9 @@ class InitialMap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-    actualizarLeyenda();
+    actualizarNombreVar(variableSeleccionada.toLowerCase());
+    actualizarRangos (variableSeleccionada.toLowerCase());
+    actualizarLeyenda(variableSeleccionada.toLowerCase());
 
     // requestPermissions();
     //
@@ -166,6 +178,7 @@ class InitialMap extends StatelessWidget {
                     ),
                     Flexible(
                         child: FlutterMap(
+
                           mapController: mapController,
                           options: MapOptions(
                             plugins: <MapPlugin>[
@@ -175,7 +188,7 @@ class InitialMap extends StatelessWidget {
                             center: LatLng(4, -74),
                             zoom: 13.0,
                             onTap: (point) {
-                              identify(point);
+                              identify(point,context);
                             }
                           ),
                           layers: [
@@ -659,6 +672,7 @@ getMarkersCentroids(double startLat, double startLon,double endLat, double endLo
 
 /// Construct a color from a hex code string, of the format #RRGGBB.
 Color hexToColor(String code) {
+  print(code.substring(1, 7));
   return new Color(int.parse(code.substring(1, 7), radix: 16) + 0xFF000000);
 }
 
@@ -667,9 +681,11 @@ Future<List<Polygon>> getCentroids(double startLat, double startLon,double endLa
   // Future<List<Marker>> markersCnpv = Future;
   List<Marker> ms = <Marker>[];
   List<Polygon> ps = <Polygon>[];
-  manzanas = await Manzana().retrieveManzanas( startLat,  startLon, endLat, endLon);
+
+  manzanas = await Manzana().retrieveManzanas( startLat,  startLon, endLat, endLon, variableSeleccionada.toLowerCase());
 
   manzanas.forEach((element) {
+    // print(element.indicator);
     // print(element.geometry);
     List<LatLng> verticesPolygon = <LatLng>[];
     jts.Geometry polygon = jts.WKBReader().read(element.geometry);
@@ -679,17 +695,39 @@ Future<List<Polygon>> getCentroids(double startLat, double startLon,double endLa
       verticesPolygon.add(vertice);
     });
     Color color = null;
-    int indicator = element.tvivienda;
+    // InstanceMirror instance_mirror = reflect(element);
+    int indicator = element.indicator;
+    String mzCod = element.cod_dane_a;
+    for(Rango rango in rangos){
+      // print("Rango");
+      // print(rango.min);
+      // print(rango.max);
+      // print(rango.color);
+      if(indicator > rango.min && indicator <= rango.max){
+        color = hexToColor(rango.color);
+        break;
+      }
+    }
+    // rangos.forEach((rango){
+    //   if(indicator > rango.min && indicator <= rango.max){
+    //     color = hexToColor(rango.color);
+    //     break;
+    //   }
+    // });
 
 
-    indicator>0 && indicator <= 57?color=Color(0xfffeebe3):
-    indicator>57 && indicator<= 192?color=Color(0xfffbb4b9):
-    indicator>192 && indicator <= 543?color=Color(0xfff768a1):
-    indicator>543 && indicator <= 1796?color=Color(0xffc51b8a):
-    indicator>1796 && indicator <= 4618?color=Color(0xff7a0177):0;
+    // indicator>0 && indicator <= 57?color=Color(0xfffeebe3):
+    // indicator>57 && indicator<= 192?color=Color(0xfffbb4b9):
+    // indicator>192 && indicator <= 543?color=Color(0xfff768a1):
+    // indicator>543 && indicator <= 1796?color=Color(0xffc51b8a):
+    // indicator>1796 && indicator <= 4618?color=Color(0xff7a0177):0;
+
+    // HashMap dataPol = HashMap<String, int>();
+    // dataPol.putIfAbsent(element.cod_dane_a, () => indicator);
 
 
     Polygon mapPol = new Polygon(points:verticesPolygon,color: color);
+    dataPolygons.putIfAbsent(mapPol.hashCode, () => "$mzCod/$indicator");
     // print(polygon.getCoordinates());
     // Marker m = Marker(
     //   width: 20.0,
@@ -703,7 +741,7 @@ Future<List<Polygon>> getCentroids(double startLat, double startLon,double endLa
     // );
 
     ps.add(mapPol);
-    print("Elemento manzana: ${element.cod_dane_a}");
+    // print("Elemento manzana: ${element.cod_dane_a}");
   });
 
   // markersCnpv = ms as Future<List<Marker>>;
@@ -714,54 +752,90 @@ Future<List<Polygon>> getCentroids(double startLat, double startLon,double endLa
 
 }
 
-void actualizarLeyenda(){
-  leyenda = [];
-  leyenda.add(ListTile(title:Text("Leyenda (Número de viviendas)", style: TextStyle(fontWeight: FontWeight.bold),),));
-  leyenda.add(ListTile(title:Text("0 - 57"),leading: ClipRRect(
-    borderRadius: BorderRadius.circular(20.0),//or 15.0
-    child: Container(
-      height: 40.0,
-      width: 40.0,
-      color: Color(0xfffeebe3),
-    ),
-  ),));
-  leyenda.add(ListTile(title:Text("57 - 192"),leading: ClipRRect(
-    borderRadius: BorderRadius.circular(20.0),//or 15.0
-    child: Container(
-      height: 40.0,
-      width: 40.0,
-      color: Color(0xfffbb4b9),
-    ),
-  ),));
-  leyenda.add(ListTile(title:Text("192 - 543"),leading: ClipRRect(
-    borderRadius: BorderRadius.circular(20.0),//or 15.0
-    child: Container(
-      height: 40.0,
-      width: 40.0,
-      color: Color(0xfff768a1),
-    ),
-  ),));
-  leyenda.add(ListTile(title:Text("543 - 1796"),leading: ClipRRect(
-    borderRadius: BorderRadius.circular(20.0),//or 15.0
-    child: Container(
-      height: 40.0,
-      width: 40.0,
-      color: Color(0xffc51b8a),
-    ),
-  ),));
-  leyenda.add(ListTile(title:Text("1796 - 4618"),leading: ClipRRect(
-    borderRadius: BorderRadius.circular(20.0),//or 15.0
-    child: Container(
-      height: 40.0,
-      width: 40.0,
-      color: Color(0xff7a0177),
-    ),
-  ),));
+void actualizarRangos (String varSel) async {
+  rangos  = await Rango().retrieveRangoByVariable(varSel);
 }
 
-void identify(LatLng pnt){
-  print("Point");
-  print(pnt);
+void actualizarNombreVar(String varSel) async{
+  List<Variable> vars = await Variable().retrieveNombreByVariable(varSel);
+  Variable first = vars.first;
+  nombreVariableSel = first.nombre_variable;
+
+  // String firstOrNull<Variable>(List<Variable> vars) {
+  //   return list == null || list.isEmpty ? null : list.first;
+  // }
+
+}
+
+void actualizarLeyenda(String varSel){
+  leyenda = [];
+  leyenda.add(ListTile(title:Text("Leyenda ($nombreVariableSel)", style: TextStyle(fontWeight: FontWeight.bold),),));
+  int min = 0;
+  int max = 0;
+  print("rangos lista");
+  print(rangos);
+  rangos.forEach((rango){
+    min = rango.min;
+    max = rango.max;
+    print("minimo");
+    print(min);
+    print(max);
+    leyenda.add(ListTile(title:Text("$min - $max"),leading: ClipRRect(
+      borderRadius: BorderRadius.circular(20.0),//or 15.0
+      child: Container(
+        height: 40.0,
+        width: 40.0,
+        color: hexToColor(rango.color),
+      ),
+    ),));
+  });
+
+  // leyenda.add(ListTile(title:Text("Leyenda (Número de viviendas)", style: TextStyle(fontWeight: FontWeight.bold),),));
+  // leyenda.add(ListTile(title:Text("0 - 57"),leading: ClipRRect(
+  //   borderRadius: BorderRadius.circular(20.0),//or 15.0
+  //   child: Container(
+  //     height: 40.0,
+  //     width: 40.0,
+  //     color: Color(0xfffeebe3),
+  //   ),
+  // ),));
+  // leyenda.add(ListTile(title:Text("57 - 192"),leading: ClipRRect(
+  //   borderRadius: BorderRadius.circular(20.0),//or 15.0
+  //   child: Container(
+  //     height: 40.0,
+  //     width: 40.0,
+  //     color: Color(0xfffbb4b9),
+  //   ),
+  // ),));
+  // leyenda.add(ListTile(title:Text("192 - 543"),leading: ClipRRect(
+  //   borderRadius: BorderRadius.circular(20.0),//or 15.0
+  //   child: Container(
+  //     height: 40.0,
+  //     width: 40.0,
+  //     color: Color(0xfff768a1),
+  //   ),
+  // ),));
+  // leyenda.add(ListTile(title:Text("543 - 1796"),leading: ClipRRect(
+  //   borderRadius: BorderRadius.circular(20.0),//or 15.0
+  //   child: Container(
+  //     height: 40.0,
+  //     width: 40.0,
+  //     color: Color(0xffc51b8a),
+  //   ),
+  // ),));
+  // leyenda.add(ListTile(title:Text("1796 - 4618"),leading: ClipRRect(
+  //   borderRadius: BorderRadius.circular(20.0),//or 15.0
+  //   child: Container(
+  //     height: 40.0,
+  //     width: 40.0,
+  //     color: Color(0xff7a0177),
+  //   ),
+  // ),));
+}
+
+void identify(LatLng pnt,BuildContext cntxt){
+  // print("Point");
+  // print(pnt);
   jts.Point pntIdentify = new jts.Point(jts.Coordinate(pnt.longitude,pnt.latitude),jts.PrecisionModel(),4326);
   //Validar cual polígono se selecciono
   for(final mz in centroidsManzanas){
@@ -775,13 +849,21 @@ void identify(LatLng pnt){
     bool intersects = false;
     intersects = polJts.intersects(pntIdentify);
     if(intersects){
-      print("Manzana click");
-      print(mz);
+      String manzanaCod = dataPolygons[mz.hashCode].split("/")[0];
+      String indicator = dataPolygons[mz.hashCode].split("/")[1];
+      // final snackBar = SnackBar(content: Text(manzana));
+      // ScaffoldMessenger.of(cntxt).showSnackBar(snackBar);
+      Fluttertoast.showToast(
+          msg: "Manzana $manzanaCod, $nombreVariableSel:$indicator",
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.BOTTOM
+      );
       break;
     }
   }
 
 }
+
 
 
 

@@ -16,6 +16,7 @@ class Manzana {
   final int tp27_perso;
   final int personas_l;
   final Uint8List geometry;
+  final int indicator;
 
 
   Manzana(
@@ -30,9 +31,10 @@ class Manzana {
       this.tp16_hog,
       this.tp27_perso,
       this.personas_l,
-      this.geometry});
+      this.geometry,
+      this.indicator});
 
-  Manzana.fromMap(Map<String,dynamic> res)
+  Manzana.fromMap(Map<String,dynamic> res,String variable)
     :   ogc_id = res["ogc_id"],
         cod_dane_a = res["cod_dane_a"],
         dpt_ccdgo = res["dpt_ccdgo"],
@@ -44,7 +46,8 @@ class Manzana {
         tp16_hog = res["tp16_hog"],
         tp27_perso = res["tp27_perso"],
         personas_l = res["personas_l"],
-        geometry = res["GEOMETRY"];
+        geometry = res["GEOMETRY"],
+        indicator = res[variable];
 
   Map<String,Object> toMap(){
     return {
@@ -59,13 +62,24 @@ class Manzana {
       "tp16_hog":tp16_hog,
       "tp27_perso":tp27_perso,
       "personas_l":personas_l,
-      "geometry": geometry
+      "geometry": geometry,
+      "indicator": indicator
     };
   }
 
-  Future<List<Manzana>> retrieveManzanas(double startLat, double startLon,double endLat, double endLon) async {
+
+  Future<List<Manzana>> retrieveManzanas(double startLat, double startLon,double endLat, double endLon, String variable) async {
+    print("Variable");
+    print(variable);
+    List<String> columnsToSelect = [
+      "cod_dane_a",
+      "latitud",
+      "longitud",
+      "geometry",
+      variable
+    ];
     final Database db = await DbHelper().initDb();
-    final List<Map<String, Object>> queryResult = await db.query("'11'",where:'latitud between ? and ? and longitud between ? and ?',whereArgs: [startLat,endLat,startLon,endLon]);
-    return queryResult.map((e) => Manzana.fromMap(e)).toList();
+    final List<Map<String, Object>> queryResult = await db.query("'11'",columns:columnsToSelect,where:'latitud between ? and ? and longitud between ? and ?',whereArgs: [startLat,endLat,startLon,endLon]);
+    return queryResult.map((e) => Manzana.fromMap(e,"tvivienda")).toList();
   }
 }
